@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -28,20 +27,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased dark`}
     >
       <body
-        style={{ background: "#050507", minHeight: "100vh", margin: 0 }}
-        className="flex"
+        style={{ background: "#000000", minHeight: "100vh", margin: 0 }}
+        className="w-full"
       >
-        <Sidebar />
-        {/* ml-60 = 240px offset for fixed sidebar */}
-        <main
-          className="ml-60 min-h-screen"
-          style={{ flex: 1, background: "#050507" }}
-        >
-          {children}
-        </main>
+        {children}
       </body>
     </html>
   );
