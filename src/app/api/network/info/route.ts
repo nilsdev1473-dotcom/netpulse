@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-// VPN ISP fingerprint list
+// Known VPN/datacenter ASNs and ISP keywords
 const VPN_ORGS = [
   "datacamp",
   "packethub",
@@ -42,64 +42,100 @@ const VPN_ORGS = [
   "serverstack",
   "hostkey",
   "selectel",
-  "serverius",
   "fdcservers",
   "nocser",
   "cyberlogitec",
-  "bandwidth.com",
   "as60068",
   "as20473",
   "as14061",
   "as16509",
+  "as136787",
 ];
 
 export async function GET(req: NextRequest) {
-  // Get real client IP - try multiple headers Vercel sets
-  const forwardedFor = req.headers.get("x-forwarded-for");
-  const realIp = req.headers.get("x-real-ip");
-  // Vercel sets the true client IP in x-forwarded-for, first entry
-  const ip = forwardedFor?.split(",")[0]?.trim() || realIp || "";
+  // Use Vercel's pre-computed geo headers — instant, no external API needed
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
+  const ipCity = req.headers.get("x-vercel-ip-city") ?? "Unknown";
+  const ipCountry = req.headers.get("x-vercel-ip-country") ?? "Unknown";
+  const ipTimezone = req.headers.get("x-vercel-ip-timezone") ?? "";
+  const asn = req.headers.get("x-vercel-ip-as-number") ?? "";
 
-  // Get browser timezone from query param (sent by frontend)
+  // Get browser timezone from query params (sent by frontend)
   const { searchParams } = new URL(req.url);
-  const _browserTimezone = searchParams.get("tz") || "";
-  const browserOffset = Number(searchParams.get("offset") || "0"); // minutes from UTC
+  const browserOffset = Number(searchParams.get("offset") ?? "0"); // minutes from UTC
 
-  const geoRes = await fetch(
-    `http://ip-api.com/json/${ip}?fields=status,isp,org,country,countryCode,city,timezone,offset,query,as`,
-  );
-  const geo = await geoRes.json();
+  // Fetch ISP name from ip-api (lightweight, just for ISP name)
+  let ispName = "Unknown";
+  let orgName = "Unknown";
+  try {
+    const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=isp,org`, {
+      signal: AbortSignal.timeout(2000),
+    });
+    const geo = await geoRes.json();
+    ispName = geo.isp ?? "Unknown";
+    orgName = geo.org ?? "Unknown";
+  } catch {
+    // Use ASN as fallback ISP name if ip-api fails
+    ispName = asn ? `AS${asn}` : "Unknown";
+  }
 
-  const orgLower = `${geo.org || ""} ${geo.isp || ""}`.toLowerCase();
-  const vpn_org = VPN_ORGS.some((v) => orgLower.includes(v));
+  const orgLower = `${orgName} ${ispName}`.toLowerCase();
 
-  // Timezone mismatch detection: compare browser tz offset vs IP tz offset
-  // ip-api returns offset in seconds from UTC
-  const ipOffsetMinutes = (geo.offset || 0) / 60;
-  const tzMismatch = Math.abs(browserOffset - ipOffsetMinutes) > 60; // >1 hour difference
+  // Signal 1: Known VPN/datacenter ISP
+  const vpnByOrg = VPN_ORGS.some((v) => orgLower.includes(v));
 
-  const vpn_detected = vpn_org || tzMismatch;
-  const vpn_confidence = vpn_org ? 90 : tzMismatch ? 75 : 5;
-  const vpn_reason = vpn_org
-    ? "Known datacenter/VPN ISP"
+  // Signal 2: IP timezone vs browser timezone offset mismatch
+  // Convert IP timezone to offset for comparison
+  let ipOffsetMinutes = 0;
+  if (ipTimezone) {
+    try {
+      const now = new Date();
+      const ipFormatter = new Intl.DateTimeFormat("en", {
+        timeZone: ipTimezone,
+        timeZoneName: "shortOffset",
+      });
+      const parts = ipFormatter.formatToParts(now);
+      const tzPart = parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+      // Parse "GMT+5:30" or "GMT-8" etc
+      const match = tzPart.match(/GMT([+-])(\d+)(?::(\d+))?/);
+      if (match) {
+        const sign = match[1] === "+" ? 1 : -1;
+        const hours = parseInt(match[2] ?? "0", 10);
+        const mins = parseInt(match[3] ?? "0", 10);
+        ipOffsetMinutes = sign * (hours * 60 + mins);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const tzMismatch =
+    ipTimezone !== "" && Math.abs(browserOffset - ipOffsetMinutes) > 90; // >1.5 hour difference
+
+  const vpn_detected = vpnByOrg || tzMismatch;
+  const vpn_confidence = vpnByOrg ? 90 : tzMismatch ? 75 : 5;
+  const vpn_reason = vpnByOrg
+    ? `ISP: ${orgName}`
     : tzMismatch
-      ? `Timezone mismatch (browser: UTC${browserOffset >= 0 ? "+" : ""}${Math.round(browserOffset / 60)}, IP: UTC${ipOffsetMinutes >= 0 ? "+" : ""}${Math.round(ipOffsetMinutes / 60)})`
-      : "";
+      ? `Timezone mismatch (browser UTC${browserOffset >= 0 ? "+" : ""}${Math.round(browserOffset / 60)}, IP: ${ipTimezone})`
+      : null;
 
-  const maskedIp = ip.replace(/(\d+)\.(\d+)\.(\d+)\.(\d+)/, "$1.$2.xxx.xxx");
-
-  // Extract ASN from the "as" field (e.g. "AS12345 Some ISP")
-  const asn = geo.as ? geo.as.split(" ")[0] : "Unknown";
+  const maskedIp = ip.replace(/(\d+)\.(\d+)\.\d+\.\d+/, "$1.$2.xxx.xxx");
 
   return NextResponse.json({
-    isp: geo.isp || "Unknown",
-    org: geo.org || "Unknown",
-    country: geo.country || "Unknown",
-    city: geo.city || "Unknown",
+    isp: ispName,
+    org: orgName,
+    country: ipCountry,
+    city: ipTimezone
+      ? (ipTimezone.split("/").pop()?.replace(/_/g, " ") ?? ipCity)
+      : ipCity,
     ip_masked: maskedIp,
     vpn_detected,
     vpn_confidence,
-    vpn_reason: vpn_reason || null,
-    asn,
+    vpn_reason,
+    asn: `AS${asn}`,
+    ip_timezone: ipTimezone,
+    browser_offset: browserOffset,
+    ip_offset: ipOffsetMinutes,
   });
 }
