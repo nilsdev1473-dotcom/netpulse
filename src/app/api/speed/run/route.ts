@@ -4,8 +4,9 @@ import { createServerClient } from "@/lib/supabase";
 // VPN ISP fingerprint list
 const VPN_ORGS = [
   "datacamp",
+  "packethub",
   "digitalocean",
-  "amazon aws",
+  "amazon",
   "google cloud",
   "microsoft azure",
   "linode",
@@ -21,8 +22,36 @@ const VPN_ORGS = [
   "aeza",
   "leaseweb",
   "choopa",
-  "as-choopa",
   "quadranet",
+  "cogent",
+  "zayo",
+  "level 3",
+  "hurricane electric",
+  "tzulo",
+  "path network",
+  "constant",
+  "sharktech",
+  "hostinger",
+  "serverius",
+  "terrahost",
+  "frantech",
+  "blix",
+  "servperso",
+  "global telecom",
+  "ipxo",
+  "velocity-networks",
+  "serverstack",
+  "hostkey",
+  "selectel",
+  "serverius",
+  "fdcservers",
+  "nocser",
+  "cyberlogitec",
+  "bandwidth.com",
+  "as60068",
+  "as20473",
+  "as14061",
+  "as16509",
 ];
 
 export async function POST(req: NextRequest) {
@@ -40,7 +69,7 @@ export async function POST(req: NextRequest) {
   );
   const geo = await geoRes.json();
 
-  const orgLower = (geo.org || "").toLowerCase();
+  const orgLower = `${geo.org || ""} ${geo.isp || ""}`.toLowerCase();
   const vpn_detected = VPN_ORGS.some((v) => orgLower.includes(v));
   const vpn_confidence = vpn_detected ? 85 : 5;
 
