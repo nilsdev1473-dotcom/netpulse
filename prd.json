@@ -1,0 +1,83 @@
+{
+  "project": "NetPulse",
+  "vision": "TRON Security Operations Center — cyber network intelligence you feel, not just read",
+  "stories": [
+    {
+      "id": 0,
+      "title": "Navigation Architecture",
+      "description": "Route-based App Router: / (Dashboard), /speedtest, /history, /traffic, /settings. Sidebar with cyber aesthetic — electric cyan active states, monospace labels, subtle circuit-line decoration.",
+      "complexity": "low",
+      "model": "sonnet"
+    },
+    {
+      "id": 1,
+      "title": "App Shell — Cyber Sidebar",
+      "description": "Fixed sidebar 240px. Logo: NetPulse with a pulsing dot indicator (green=online, red=offline). Nav items: Dashboard (LayoutDashboard), Speed Test (Zap), History (BarChart2), Traffic (Activity), Settings (Settings2). Active: electric cyan left border + glow. Background: #0A0A0B. Scan-line texture overlay. Status bar at bottom: connection type, ISP name (from ipapi.co), current IP.",
+      "complexity": "medium",
+      "model": "sonnet"
+    },
+    {
+      "id": 2,
+      "title": "Dashboard — Live Metrics Strip",
+      "description": "Top KPI bar: Ping (ms), Download (Mbps estimate from navigator.connection), Upload (N/A until tested), Connection Type (4G/WiFi/Ethernet from navigator.connection.effectiveType), VPN Status (detected/not detected). Each metric: large monospace number, small label, status dot, micro sparkline showing last 10 readings. Auto-refreshes every 5 seconds by polling navigator.connection + doing a quick ping to speed.cloudflare.com/__ping.",
+      "complexity": "medium",
+      "model": "sonnet"
+    },
+    {
+      "id": 3,
+      "title": "Speed Test Engine + Animated Gauge",
+      "description": "Core speed test using XHR to speed.cloudflare.com. Download: fetch /__down?bytes=25000000 with progress tracking (onprogress event counting bytes/time). Upload: POST /__up with random blob. Run 4 parallel streams for accuracy. Display: large radial arc gauge (SVG-based, not Recharts) showing Mbps in real-time as test runs, animated needle sweep. Results: Download Mbps, Upload Mbps, Ping ms, Jitter ms. Green gradient fill as speed increases. Cyberpunk aesthetic: hex grid background, scan-line animation during test, 'SCANNING...' text.",
+      "complexity": "high",
+      "model": "sonnet"
+    },
+    {
+      "id": 4,
+      "title": "Speed History & Benchmarks",
+      "description": "Store speed test results in localStorage: {date, download, upload, ping, connectionName}. User can name each connection ('Home WiFi', 'Coffee Shop', 'VPN ON'). Area chart (Recharts — dynamic import + ssr:false + h-[300px] explicit parent) showing download speed history. Table of all tests with date, location name, speeds. Best/worst/average stats cards. Compare mode: select two named connections to see delta.",
+      "complexity": "medium",
+      "model": "sonnet"
+    },
+    {
+      "id": 5,
+      "title": "VPN Detector",
+      "description": "Detect VPN using 3 signals: 1) WebRTC IP leak (RTCPeerConnection to extract local IPs — 10.x/172.16-31.x/192.168.x = VPN tunnel), 2) IP geolocation mismatch (fetch ipapi.co/json, compare country vs browser timezone), 3) navigator.connection effective type drop. Show: VPN Status badge (DETECTED/CLEAN), confidence score 0-100%, IP shown (masked for privacy), geolocation city+country, method that triggered detection. If VPN detected: show speed penalty estimate vs last non-VPN test. Cyber security terminal aesthetic: green-on-black text, blinking cursor, 'ANALYZING ROUTE...' animation.",
+      "complexity": "high",
+      "model": "sonnet"
+    },
+    {
+      "id": 6,
+      "title": "Traffic Analysis — PerformanceResourceTiming",
+      "description": "Passive traffic analyzer using PerformanceObserver watching PerformanceResourceTiming entries. Show: live feed of network requests as they happen (URL domain, size, duration, protocol HTTP/2 vs HTTP/3, cache hit). Aggregate: top domains by request count + bytes, protocol breakdown pie chart (Recharts — dynamic import). Plain English summary: 'Your browser made 12 requests in the last 30s. 89% used HTTP/2. 3 third-party domains detected (ads/analytics). Average TTFB: 45ms.' Traffic flow visualization: animated dots moving left-to-right representing active requests. Security flags: highlight any HTTP (non-HTTPS), unusually large responses, known tracker domains.",
+      "complexity": "high",
+      "model": "sonnet"
+    },
+    {
+      "id": 7,
+      "title": "Connection Intelligence Cards",
+      "description": "Dashboard section showing: DNS Resolution Time (timing a known fast host), TLS Handshake Time (from PerformanceResourceTiming), TTFB (time to first byte), Geographic route estimate (ping to multiple regional Cloudflare servers to triangulate). Each metric with: current value, historical range, health indicator (green/amber/red), tooltip explaining what it means. Cyberpunk design: each card has animated border that pulses based on metric health.",
+      "complexity": "medium",
+      "model": "sonnet"
+    },
+    {
+      "id": 8,
+      "title": "Mock Data + Data Layer",
+      "description": "Create src/lib/network.ts with: SpeedTestEngine class (XHR-based, parallel streams, progress callbacks), PerformanceMonitor class (PerformanceObserver wrapper), VPNDetector class (WebRTC + geolocation check), ConnectionMetrics class (pings speed.cloudflare.com, reads navigator.connection). Also: localStorage helpers for persisting test history. Types for all data structures.",
+      "complexity": "medium",
+      "model": "sonnet"
+    },
+    {
+      "id": 9,
+      "title": "21st.dev Components Integration",
+      "description": "Integrate the 3 design components: 1) NeonButton for all CTAs (Start Test, Clear History, etc.) — variants: default, cyan, green, red. 2) CpuArchitecture animation shown during active speed test (replace idle spinner with circuit animation). 3) Glass button style throughout. Also: add lib/utils.ts (cn helper), global CSS animations (neon glow, scan-line, circuit pulse). Add biome.json to exclude .next/.",
+      "complexity": "medium",
+      "model": "sonnet"
+    },
+    {
+      "id": 10,
+      "title": "Responsive + Final Polish",
+      "description": "Mobile responsive at 320px, 768px, 1440px. Sidebar collapses to bottom nav on mobile. Speed gauge scales properly. Toast notifications for: test complete, VPN detected, new record speed. Lighthouse >85. Zero console errors. biome check clean.",
+      "complexity": "low",
+      "model": "sonnet"
+    }
+  ]
+}

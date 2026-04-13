@@ -1,8 +1,32 @@
 @import "tailwindcss";
 
+/* -------------------------------------------------------------------------
+   NetPulse — Global CSS
+   TRON Security Operations Center aesthetic
+   ------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   CSS Custom Properties — NetPulse Design Tokens
+   --------------------------------------------------------------------------- */
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* NetPulse palette */
+  --cyan: #00E8ED;
+  --surface: #0D0D10;
+  --bg: #050507;
+
+  /* Accent derivatives */
+  --cyan-dim: rgba(0, 232, 237, 0.12);
+  --cyan-glow: rgba(0, 232, 237, 0.3);
+  --cyan-border: rgba(0, 232, 237, 0.1);
+  --cyan-border-bright: rgba(0, 232, 237, 0.25);
+
+  /* Status */
+  --success: #00FF94;
+  --warning: #FFB800;
+  --danger: #FF3B3B;
 }
 
 @theme inline {
@@ -14,13 +38,425 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: var(--bg);
+    --foreground: rgba(255, 255, 255, 0.92);
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   CpuArchitecture — animated orb keyframes (8 paths)
+   --------------------------------------------------------------------------- */
+.cpu-architecture {
+  offset-rotate: 0deg;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.cpu-line-1 {
+  offset-path: path("M 10 20 h 79.5 q 5 0 5 5 v 24");
+  animation: animation-path-1 3s linear infinite;
+}
+.cpu-line-2 {
+  offset-path: path("M 180 10 h -69.7 q -5 0 -5 5 v 24");
+  animation: animation-path-2 2.8s linear infinite;
+  animation-delay: -0.6s;
+}
+.cpu-line-3 {
+  offset-path: path("M 130 20 v 21.8 q 0 5 -5 5 h -10");
+  animation: animation-path-3 2.2s linear infinite;
+  animation-delay: -1.1s;
+}
+.cpu-line-4 {
+  offset-path: path("M 170 80 v -21.8 q 0 -5 -5 -5 h -50");
+  animation: animation-path-4 2.5s linear infinite;
+  animation-delay: -0.4s;
+}
+.cpu-line-5 {
+  offset-path: path("M 135 65 h 15 q 5 0 5 5 v 10 q 0 5 -5 5 h -39.8 q -5 0 -5 -5 v -20");
+  animation: animation-path-5 4s linear infinite;
+  animation-delay: -2s;
+}
+.cpu-line-6 {
+  offset-path: path("M 94.8 95 v -36");
+  animation: animation-path-6 1.8s linear infinite;
+  animation-delay: -0.9s;
+}
+.cpu-line-7 {
+  offset-path: path("M 88 88 v -15 q 0 -5 -5 -5 h -10 q -5 0 -5 -5 v -5 q 0 -5 5 -5 h 14");
+  animation: animation-path-7 3.2s linear infinite;
+  animation-delay: -1.6s;
+}
+.cpu-line-8 {
+  offset-path: path("M 30 30 h 25 q 5 0 5 5 v 6.5 q 0 5 5 5 h 20");
+  animation: animation-path-8 2.6s linear infinite;
+  animation-delay: -1.3s;
+}
+
+@keyframes animation-path-1 {
+  0%   { offset-distance: 0%; opacity: 0; }
+  5%   { opacity: 1; }
+  90%  { opacity: 0.8; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+@keyframes animation-path-2 {
+  0%   { offset-distance: 0%; opacity: 0; }
+  5%   { opacity: 1; }
+  90%  { opacity: 0.8; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+@keyframes animation-path-3 {
+  0%   { offset-distance: 0%; opacity: 0; }
+  5%   { opacity: 1; }
+  90%  { opacity: 0.8; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+@keyframes animation-path-4 {
+  0%   { offset-distance: 0%; opacity: 0; }
+  5%   { opacity: 1; }
+  90%  { opacity: 0.8; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+@keyframes animation-path-5 {
+  0%   { offset-distance: 0%; opacity: 0; }
+  5%   { opacity: 1; }
+  90%  { opacity: 0.8; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+@keyframes animation-path-6 {
+  0%   { offset-distance: 0%; opacity: 0; }
+  5%   { opacity: 1; }
+  90%  { opacity: 0.8; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+@keyframes animation-path-7 {
+  0%   { offset-distance: 0%; opacity: 0; }
+  5%   { opacity: 1; }
+  90%  { opacity: 0.8; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+@keyframes animation-path-8 {
+  0%   { offset-distance: 0%; opacity: 0; }
+  5%   { opacity: 1; }
+  90%  { opacity: 0.8; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+/* ---------------------------------------------------------------------------
+   NeonButton — neon-btn CSS classes
+   --------------------------------------------------------------------------- */
+.neon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 232, 237, 0.3);
+  background: rgba(0, 232, 237, 0.08);
+  color: rgba(0, 232, 237, 0.9);
+  font-size: 0.875rem;
+  padding: 0.375rem 1.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.neon-btn::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 232, 237, 0.7),
+    transparent
+  );
+  width: 75%;
+  margin-inline: auto;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.neon-btn::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 232, 237, 0.5),
+    transparent
+  );
+  width: 75%;
+  margin-inline: auto;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.neon-btn:hover {
+  background: rgba(0, 232, 237, 0.04);
+  box-shadow: 0 0 20px rgba(0, 232, 237, 0.12);
+}
+
+.neon-btn:hover::before,
+.neon-btn:hover::after {
+  opacity: 1;
+}
+
+/* Light mode overrides */
+@media (prefers-color-scheme: light) {
+  .neon-btn {
+    border-color: rgba(0, 180, 185, 0.4);
+    background: rgba(0, 180, 185, 0.06);
+    color: rgba(0, 150, 155, 0.9);
+  }
+
+  .neon-btn:hover {
+    background: rgba(0, 180, 185, 0.03);
+    box-shadow: 0 0 16px rgba(0, 180, 185, 0.1);
+  }
+
+  .neon-btn::before {
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(0, 180, 185, 0.6),
+      transparent
+    );
+  }
+
+  .neon-btn::after {
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(0, 180, 185, 0.4),
+      transparent
+    );
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Scan-line effect — applied to active/scanning containers
+   --------------------------------------------------------------------------- */
+.scan-lines {
+  position: relative;
+}
+
+.scan-lines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 232, 237, 0.02) 2px,
+    rgba(0, 232, 237, 0.02) 4px
+  );
+  animation: scan-line-move 2s linear infinite;
+}
+
+@keyframes scan-line-move {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 -80px; }
+}
+
+/* Standalone scan line sweep (overlay element) */
+.scan-line-sweep {
+  position: absolute;
+  inset-inline: 0;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 232, 237, 0.4),
+    transparent
+  );
+  animation: scan-sweep 2s ease-in-out infinite;
+}
+
+@keyframes scan-sweep {
+  0%   { top: 0%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* ---------------------------------------------------------------------------
+   Pulsing status dot
+   --------------------------------------------------------------------------- */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot-online {
+  background: var(--success);
+  animation: pulse-online 2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--success);
+}
+
+.status-dot-testing {
+  background: var(--cyan);
+  animation: pulse-testing 0.8s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--cyan);
+}
+
+.status-dot-error {
+  background: var(--danger);
+  animation: pulse-error 3s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--danger);
+}
+
+@keyframes pulse-online {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.85); }
+}
+
+@keyframes pulse-testing {
+  0%, 100% { opacity: 1; transform: scale(1.1); }
+  50%       { opacity: 0.4; transform: scale(0.9); }
+}
+
+@keyframes pulse-error {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.9); }
+}
+
+/* ---------------------------------------------------------------------------
+   Utility Classes — Cyber Design System
+   --------------------------------------------------------------------------- */
+
+/* Standard card — surface bg, cyan border, sharp corners */
+.cyber-card {
+  background: var(--surface);
+  border: 1px solid var(--cyan-border);
+  border-radius: 4px;
+}
+
+/* Monospace font utility */
+.mono {
+  font-family: var(--mono, 'JetBrains Mono', monospace);
+}
+
+/* Cyan accent text */
+.cyber-text {
+  color: var(--cyan);
+}
+
+/* Status badge — clean/online (green pill) */
+.status-badge-clean {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  background: rgba(0, 255, 148, 0.1);
+  border: 1px solid rgba(0, 255, 148, 0.25);
+  color: #00FF94;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Status badge — detected/threat (red pill with pulse) */
+.status-badge-detected {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  background: rgba(255, 59, 59, 0.1);
+  border: 1px solid rgba(255, 59, 59, 0.25);
+  color: #FF3B3B;
+  font-size: 0.75rem;
+  font-weight: 500;
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.3); }
+  50%       { box-shadow: 0 0 0 4px rgba(255, 59, 59, 0); }
+}
+
+/* Shimmer bar — animated loading/progress indicator */
+.shimmer-bar {
+  position: relative;
+  overflow: hidden;
+  height: 4px;
+  background: rgba(0, 232, 237, 0.08);
+  border-radius: 2px;
+}
+
+.shimmer-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 232, 237, 0.5) 40%,
+    rgba(0, 232, 237, 0.8) 50%,
+    rgba(0, 232, 237, 0.5) 60%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive Layout — Mobile (<768px)
+   --------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  /* Hide sidebar on mobile */
+  aside,
+  [data-sidebar],
+  .sidebar {
+    display: none !important;
+  }
+
+  /* Main content fills full width — no sidebar offset */
+  main,
+  [data-main-content],
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  /* Speed gauge: scale down to 80% */
+  .speed-gauge,
+  [data-speed-gauge] {
+    transform: scale(0.8);
+    transform-origin: top center;
+  }
+
+  /* Cards stack vertically */
+  .card-grid,
+  [data-card-grid] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tables become horizontally scrollable */
+  table,
+  .table-wrapper {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
 }
