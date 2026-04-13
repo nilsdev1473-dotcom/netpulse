@@ -25,6 +25,9 @@ interface ISPInfo {
   city: string;
   country: string;
   org: string;
+  vpn_detected?: boolean;
+  vpn_confidence?: number;
+  vpn_reason?: string | null;
 }
 
 interface NetRequest {
@@ -319,16 +322,21 @@ export default function Page() {
   const autoRunTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const measureCountRef = useRef(0);
 
-  // ── Fetch ISP info once ────────────────────────────────────────────────────
+  // ── Fetch ISP info via server-side API (with timezone mismatch detection) ──
   useEffect(() => {
-    fetch("https://ipapi.co/json/")
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const offset = -new Date().getTimezoneOffset(); // minutes from UTC (positive = east)
+    fetch(`/api/network/info?tz=${encodeURIComponent(tz)}&offset=${offset}`)
       .then((r) => r.json())
-      .then((d: Record<string, string>) => {
+      .then((d: Record<string, string | boolean | number | null>) => {
         setIsp({
-          ip: d.ip ?? "—",
-          city: d.city ?? "—",
-          country: d.country_name ?? "—",
-          org: (d.org ?? "").replace(/^AS\d+\s+/, "") || "—",
+          ip: String(d.ip_masked ?? "—"),
+          city: String(d.city ?? "—"),
+          country: String(d.country ?? "—"),
+          org: String(d.isp ?? "—"),
+          vpn_detected: Boolean(d.vpn_detected),
+          vpn_confidence: Number(d.vpn_confidence ?? 0),
+          vpn_reason: d.vpn_reason ? String(d.vpn_reason) : null,
         });
       })
       .catch(() => {});
@@ -795,7 +803,9 @@ export default function Page() {
               { label: "IP", value: maskedIP },
               {
                 label: "CLEAN",
-                value: "✓ NO VPN",
+                value: isp?.vpn_detected
+                  ? `⚠ ${isp.vpn_confidence ?? 0}% conf`
+                  : "✓ Direct",
                 color: "#00FF94",
               },
             ].map((item, i) => (
