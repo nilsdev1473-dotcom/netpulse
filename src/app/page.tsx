@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SpeedPoint } from "@/components/charts/SpeedLineChart";
 import SpeedGauge from "@/components/SpeedGauge";
 import type { FlaggedItem } from "@/components/TrafficCanvas";
@@ -61,7 +61,9 @@ const TRACKER_PATTERNS = [
 
 async function measurePing(): Promise<number> {
   const start = Date.now();
-  await fetch("https://speed.cloudflare.com/__ping", { cache: "no-store" });
+  await fetch("https://speed.cloudflare.com/cdn-cgi/trace", {
+    cache: "no-store",
+  });
   return Date.now() - start;
 }
 
@@ -468,6 +470,25 @@ export default function Page() {
   const handleFlaggedItem = useCallback((item: FlaggedItem) => {
     setFlaggedItems((prev) => [item, ...prev].slice(0, 20));
   }, []);
+
+  // Generate plain English traffic summary
+  const trafficSummary = useMemo(() => {
+    if (requests.length === 0) return null;
+    const total = requests.length;
+    const trackers = requests.filter((r) => r.protocol === "TRACKER").length;
+    const h3 = requests.filter((r) => r.protocol === "HTTP/3").length;
+    const avgMs = Math.round(
+      requests.reduce((s, r) => s + r.durationMs, 0) / total,
+    );
+    const totalKB = Math.round(requests.reduce((s, r) => s + r.sizeKB, 0));
+    const hasWarning = trackers > 0 || avgMs > 500;
+    let msg = `${total} requests · ${totalKB}KB transferred · avg ${avgMs}ms`;
+    if (h3 > 0) msg += ` · ${Math.round((h3 / total) * 100)}% HTTP/3`;
+    if (trackers > 0)
+      msg += ` · ⚠ ${trackers} tracker${trackers > 1 ? "s" : ""} detected`;
+    else msg += " · No trackers detected";
+    return { msg, warning: hasWarning };
+  }, [requests]);
 
   return (
     <>
@@ -934,6 +955,21 @@ export default function Page() {
           {/* Network requests list */}
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <ZoneLabel label="RECENT REQUESTS" />
+            {trafficSummary && (
+              <div
+                style={{
+                  fontSize: 11,
+                  fontFamily: "var(--mono)",
+                  color: trafficSummary.warning
+                    ? "#FFB800"
+                    : "rgba(0,232,237,0.6)",
+                  padding: "6px 4px 10px",
+                  letterSpacing: "0.03em",
+                }}
+              >
+                {trafficSummary.msg}
+              </div>
+            )}
             <div style={{ marginTop: 6 }}>
               {requests.length === 0 ? (
                 <div
