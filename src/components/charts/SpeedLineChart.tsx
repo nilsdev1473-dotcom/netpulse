@@ -5,25 +5,28 @@ import {
   LineChart,
   ReferenceLine,
   ResponsiveContainer,
+  XAxis,
   YAxis,
 } from "recharts";
 
-interface DataPoint {
+export interface SpeedPoint {
   value: number;
+  label: string;
 }
 
 interface SpeedLineChartProps {
-  data: DataPoint[];
+  data: SpeedPoint[];
 }
 
 export default function SpeedLineChart({ data }: SpeedLineChartProps) {
   const maxVal = Math.max(...data.map((d) => d.value), 1);
+  const yMax = maxVal * 1.2;
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+      <LineChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
         <defs>
-          <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <filter id="speed-glow" x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
@@ -31,33 +34,40 @@ export default function SpeedLineChart({ data }: SpeedLineChartProps) {
             </feMerge>
           </filter>
         </defs>
-        <YAxis
-          domain={[0, maxVal * 1.2]}
+        <XAxis
+          dataKey="label"
           tick={{
-            fill: "rgba(0,232,237,0.5)",
-            fontSize: 9,
+            fill: "rgba(0,232,237,0.4)",
+            fontSize: 8,
             fontFamily: "var(--font-jetbrains-mono)",
           }}
           tickLine={false}
           axisLine={false}
-          width={28}
+          interval={4}
+        />
+        <YAxis
+          domain={[0, yMax]}
+          tick={{
+            fill: "rgba(0,232,237,0.4)",
+            fontSize: 8,
+            fontFamily: "var(--font-jetbrains-mono)",
+          }}
+          tickLine={false}
+          axisLine={false}
+          width={32}
           ticks={[0, Math.round(maxVal / 2), Math.round(maxVal)]}
           interval={0}
         />
-        <ReferenceLine
-          y={0}
-          stroke="rgba(0,232,237,0.08)"
-          strokeDasharray="0"
-        />
+        <ReferenceLine y={0} stroke="rgba(0,232,237,0.06)" />
         <Line
           type="monotone"
           dataKey="value"
           stroke="#00E8ED"
           strokeWidth={2}
           dot={false}
-          activeDot={false}
+          activeDot={{ r: 3, fill: "#00E8ED", strokeWidth: 0 }}
           isAnimationActive={false}
-          filter="url(#neon-glow)"
+          filter="url(#speed-glow)"
         />
       </LineChart>
     </ResponsiveContainer>

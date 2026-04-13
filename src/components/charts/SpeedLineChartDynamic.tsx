@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { SpeedPoint } from "./SpeedLineChart";
 
 const SpeedLineChart = dynamic(() => import("./SpeedLineChart"), {
   ssr: false,
@@ -19,4 +20,10 @@ const SpeedLineChart = dynamic(() => import("./SpeedLineChart"), {
   ),
 });
 
-export default SpeedLineChart;
+export default function SpeedLineChartDynamic({
+  data,
+}: {
+  data: SpeedPoint[];
+}) {
+  return <SpeedLineChart data={data} />;
+}
