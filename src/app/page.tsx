@@ -98,24 +98,28 @@ async function measureDownload(
 }
 
 function measureUpload(onProgress: (mbps: number) => void): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const size = 2_000_000;
-    const data = new Uint8Array(size);
+  return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
-    const ulStart = Date.now();
+    const data = new ArrayBuffer(2_000_000); // 2MB
+    const blob = new Blob([data]);
+    let startTime = 0;
+    xhr.upload.onloadstart = () => {
+      startTime = Date.now();
+    };
     xhr.upload.onprogress = (e) => {
-      const elapsed = (Date.now() - ulStart) / 1000;
-      if (elapsed > 0.05 && e.loaded > 0) {
-        onProgress((e.loaded * 8) / (elapsed * 1_000_000));
+      if (e.loaded > 0 && startTime > 0) {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const mbps = (e.loaded * 8) / (elapsed * 1_000_000);
+        onProgress(mbps);
       }
     };
-    xhr.onload = () => {
-      const elapsed = (Date.now() - ulStart) / 1000;
-      resolve((size * 8) / (elapsed * 1_000_000));
+    xhr.upload.onload = () => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      resolve((blob.size * 8) / (elapsed * 1_000_000));
     };
-    xhr.onerror = () => reject(new Error("Upload failed"));
+    xhr.upload.onerror = () => resolve(0);
     xhr.open("POST", "https://speed.cloudflare.com/__up");
-    xhr.send(data.buffer);
+    xhr.send(blob);
   });
 }
 
@@ -313,6 +317,16 @@ export default function Page() {
   const [requests, setRequests] = useState<NetRequest[]>([]);
   const [flaggedItems, setFlaggedItems] = useState<FlaggedItem[]>([]);
 
+  // Session ID — persisted in localStorage so history survives page reloads
+  const [sessionId] = useState(() => {
+    if (typeof window === "undefined") return "ssr";
+    const stored = localStorage.getItem("np_session");
+    if (stored) return stored;
+    const id = crypto.randomUUID();
+    localStorage.setItem("np_session", id);
+    return id;
+  });
+
   // Refs
   const historyRef = useRef<SpeedPoint[]>([]);
   const isRunningRef = useRef(false);
@@ -321,6 +335,33 @@ export default function Page() {
   const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoRunTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const measureCountRef = useRef(0);
+
+  // ── Load speed history from backend on mount ────────────────────────────
+  useEffect(() => {
+    if (!sessionId || sessionId === "ssr") return;
+    fetch(`/api/speed/history?session_id=${sessionId}`)
+      .then((r) => r.json())
+      .then(
+        (
+          data: Array<{
+            download_mbps: number;
+            ping_ms: number;
+            timestamp: string;
+          }>,
+        ) => {
+          if (Array.isArray(data) && data.length > 0) {
+            const points: SpeedPoint[] = data.reverse().map((d, i) => ({
+              value: parseFloat(d.download_mbps.toFixed(2)),
+              label: i === 0 ? "now" : `${i * 30}s`,
+            }));
+            historyRef.current = points;
+            setHistory(points);
+            measureCountRef.current = points.length;
+          }
+        },
+      )
+      .catch(() => {});
+  }, [sessionId]);
 
   // ── Fetch ISP info via server-side API (with timezone mismatch detection) ──
   useEffect(() => {
@@ -413,6 +454,18 @@ export default function Page() {
       };
       historyRef.current = [...historyRef.current, point].slice(-20);
       setHistory([...historyRef.current]);
+
+      // Save to backend
+      fetch("/api/speed/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          download_mbps: dl,
+          upload_mbps: ul,
+          ping_ms: p,
+        }),
+      }).catch(() => {}); // silent fail
     } catch (err) {
       console.error("Speed test error:", err);
     } finally {
@@ -420,7 +473,7 @@ export default function Page() {
       isRunningRef.current = false;
       scheduleNextRef.current?.();
     }
-  }, []);
+  }, [sessionId]);
 
   // Keep runTest ref in sync
   useEffect(() => {
@@ -802,11 +855,9 @@ export default function Page() {
               },
               { label: "IP", value: maskedIP },
               {
-                label: "CLEAN",
-                value: isp?.vpn_detected
-                  ? `⚠ ${isp.vpn_confidence ?? 0}% conf`
-                  : "✓ Direct",
-                color: "#00FF94",
+                label: "VPN STATUS",
+                value: isp?.vpn_detected ? "⚠ VPN ON" : "✓ DIRECT",
+                color: isp?.vpn_detected ? "#FFB800" : "#00FF94",
               },
             ].map((item, i) => (
               <div
