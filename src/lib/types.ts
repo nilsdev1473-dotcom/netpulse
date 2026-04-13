@@ -50,6 +50,18 @@ export interface NetworkSnapshot {
   timestamp: number;
 }
 
+export interface TrafficEvent {
+  domain: string;
+  url: string;
+  method: string;
+  status: number;
+  size: number;
+  duration: number;
+  protocol: string;
+  timestamp: number;
+  initiator?: string;
+}
+
 export interface SpeedStats {
   best: SpeedTestResult | null;
   worst: SpeedTestResult | null;

@@ -1,82 +1,74 @@
 {
-  "project": "NetPulse",
-  "vision": "TRON Security Operations Center — cyber network intelligence you feel, not just read",
+  "project": "NetPulse v2",
+  "vision": "Professional network intelligence tool — what GlassWire would look like if built for a power user who runs an AI stack",
+  "architecture": {
+    "frontend": "Next.js 14 App Router on Vercel",
+    "backend": "Next.js API Routes (serverless) on Vercel",
+    "database": "Supabase (speed_results + traffic_events + sessions)",
+    "realtime": "Supabase Realtime for live dashboard updates",
+    "analysis": "GPT-4.1 for plain-English traffic analysis",
+    "speed_test": "Client-side XHR to Cloudflare (browser) + server-side librespeed-cli (API routes)"
+  },
+  "database_schema": {
+    "speed_results": "id, session_id, download_mbps, upload_mbps, ping_ms, jitter_ms, isp, org, ip_masked, city, country, connection_type, vpn_detected, vpn_confidence, timestamp",
+    "traffic_events": "id, session_id, domain, size_kb, duration_ms, protocol, flagged, flag_reason, flag_severity, timestamp",
+    "sessions": "id, fingerprint, first_seen, last_seen, total_tests, best_download"
+  },
   "stories": [
     {
       "id": 0,
-      "title": "Navigation Architecture",
-      "description": "Route-based App Router: / (Dashboard), /speedtest, /history, /traffic, /settings. Sidebar with cyber aesthetic — electric cyan active states, monospace labels, subtle circuit-line decoration.",
-      "complexity": "low",
+      "title": "Database Setup + Supabase Schema",
+      "description": "Create all tables in Supabase via migration SQL. Set up RLS policies. Create TypeScript types from schema.",
+      "complexity": "medium",
       "model": "sonnet"
     },
     {
       "id": 1,
-      "title": "App Shell — Cyber Sidebar",
-      "description": "Fixed sidebar 240px. Logo: NetPulse with a pulsing dot indicator (green=online, red=offline). Nav items: Dashboard (LayoutDashboard), Speed Test (Zap), History (BarChart2), Traffic (Activity), Settings (Settings2). Active: electric cyan left border + glow. Background: #0A0A0B. Scan-line texture overlay. Status bar at bottom: connection type, ISP name (from ipapi.co), current IP.",
+      "title": "Next.js API Routes — Speed Test Backend",
+      "description": "POST /api/speed/run — accepts test results from client, validates, stores to Supabase speed_results. GET /api/speed/history?session_id=X — returns last 50 tests for session. GET /api/speed/stats?session_id=X — returns best/avg/worst. All routes use Supabase service role key.",
       "complexity": "medium",
       "model": "sonnet"
     },
     {
       "id": 2,
-      "title": "Dashboard — Live Metrics Strip",
-      "description": "Top KPI bar: Ping (ms), Download (Mbps estimate from navigator.connection), Upload (N/A until tested), Connection Type (4G/WiFi/Ethernet from navigator.connection.effectiveType), VPN Status (detected/not detected). Each metric: large monospace number, small label, status dot, micro sparkline showing last 10 readings. Auto-refreshes every 5 seconds by polling navigator.connection + doing a quick ping to speed.cloudflare.com/__ping.",
-      "complexity": "medium",
-      "model": "sonnet"
-    },
-    {
-      "id": 3,
-      "title": "Speed Test Engine + Animated Gauge",
-      "description": "Core speed test using XHR to speed.cloudflare.com. Download: fetch /__down?bytes=25000000 with progress tracking (onprogress event counting bytes/time). Upload: POST /__up with random blob. Run 4 parallel streams for accuracy. Display: large radial arc gauge (SVG-based, not Recharts) showing Mbps in real-time as test runs, animated needle sweep. Results: Download Mbps, Upload Mbps, Ping ms, Jitter ms. Green gradient fill as speed increases. Cyberpunk aesthetic: hex grid background, scan-line animation during test, 'SCANNING...' text.",
+      "title": "Next.js API Routes — Traffic Analysis",
+      "description": "POST /api/traffic/log — batch insert traffic events to Supabase. POST /api/traffic/analyze — takes last 30 traffic events, sends to GPT-4.1 with structured prompt, returns plain English analysis + threat score 0-100 + specific flags. GET /api/traffic/summary?session_id=X — aggregate stats.",
       "complexity": "high",
       "model": "sonnet"
     },
     {
-      "id": 4,
-      "title": "Speed History & Benchmarks",
-      "description": "Store speed test results in localStorage: {date, download, upload, ping, connectionName}. User can name each connection ('Home WiFi', 'Coffee Shop', 'VPN ON'). Area chart (Recharts — dynamic import + ssr:false + h-[300px] explicit parent) showing download speed history. Table of all tests with date, location name, speeds. Best/worst/average stats cards. Compare mode: select two named connections to see delta.",
+      "id": 3,
+      "title": "Next.js API Routes — VPN + IP Intelligence",
+      "description": "GET /api/network/info — server-side: fetches ip-api.com (more reliable than ipapi.co), checks ISP against VPN fingerprint database (50+ known VPN/datacenter orgs), returns: isp, org, vpn_detected (bool), vpn_confidence (0-100), country, city, masked_ip, asn. Server-side is more accurate than browser WebRTC.",
       "complexity": "medium",
       "model": "sonnet"
     },
     {
+      "id": 4,
+      "title": "Core Speed Test Engine — Real with Backend Storage",
+      "description": "Client-side: Real streaming XHR to Cloudflare, gauge updates every 200ms, stores result to /api/speed/run on completion. The gauge sweeps for real. Session ID generated on first visit (localStorage), passed to all API calls. Auto-runs on mount, every 60s after.",
+      "complexity": "high",
+      "model": "sonnet"
+    },
+    {
       "id": 5,
-      "title": "VPN Detector",
-      "description": "Detect VPN using 3 signals: 1) WebRTC IP leak (RTCPeerConnection to extract local IPs — 10.x/172.16-31.x/192.168.x = VPN tunnel), 2) IP geolocation mismatch (fetch ipapi.co/json, compare country vs browser timezone), 3) navigator.connection effective type drop. Show: VPN Status badge (DETECTED/CLEAN), confidence score 0-100%, IP shown (masked for privacy), geolocation city+country, method that triggered detection. If VPN detected: show speed penalty estimate vs last non-VPN test. Cyber security terminal aesthetic: green-on-black text, blinking cursor, 'ANALYZING ROUTE...' animation.",
+      "title": "Hero Dashboard — GlassWire-inspired Layout",
+      "description": "Single page. Hero: TWO large centered gauges (download + upload) with REAL data from completed tests. Below gauges: 3 key stats (Ping / Download / Upload) in large mono. ISP card showing VPN status, country, org — from /api/network/info. Speed history chart from Supabase (real persistent data across sessions). Design: premium dark, NOT neon-generic. Reference: GlassWire. Sharp typography, data density.",
       "complexity": "high",
       "model": "sonnet"
     },
     {
       "id": 6,
-      "title": "Traffic Analysis — PerformanceResourceTiming",
-      "description": "Passive traffic analyzer using PerformanceObserver watching PerformanceResourceTiming entries. Show: live feed of network requests as they happen (URL domain, size, duration, protocol HTTP/2 vs HTTP/3, cache hit). Aggregate: top domains by request count + bytes, protocol breakdown pie chart (Recharts — dynamic import). Plain English summary: 'Your browser made 12 requests in the last 30s. 89% used HTTP/2. 3 third-party domains detected (ads/analytics). Average TTFB: 45ms.' Traffic flow visualization: animated dots moving left-to-right representing active requests. Security flags: highlight any HTTP (non-HTTPS), unusually large responses, known tracker domains.",
+      "title": "Live Traffic Intelligence Panel",
+      "description": "PerformanceObserver feeds real browser requests. Batches every 10s to /api/traffic/log. Every 30s calls /api/traffic/analyze → GPT-4.1 returns plain English paragraph + threat score. Display: traffic summary paragraph at top (GPT-written, updates every 30s), threat meter 0-100, compact request list (domain, size, duration, protocol badge). Canvas animation optional and secondary — the GPT analysis IS the feature.",
       "complexity": "high",
       "model": "sonnet"
     },
     {
       "id": 7,
-      "title": "Connection Intelligence Cards",
-      "description": "Dashboard section showing: DNS Resolution Time (timing a known fast host), TLS Handshake Time (from PerformanceResourceTiming), TTFB (time to first byte), Geographic route estimate (ping to multiple regional Cloudflare servers to triangulate). Each metric with: current value, historical range, health indicator (green/amber/red), tooltip explaining what it means. Cyberpunk design: each card has animated border that pulses based on metric health.",
+      "title": "Connection History — Real Persistent Data",
+      "description": "Fetches from Supabase via /api/speed/history. Shows: last 20 tests, date/time, download speed, upload, ping, VPN status, location. Area chart from real Supabase data. Best/worst/avg from real data. Location grouping: tests from same IP cluster shown as same 'session'. Export to CSV button.",
       "complexity": "medium",
-      "model": "sonnet"
-    },
-    {
-      "id": 8,
-      "title": "Mock Data + Data Layer",
-      "description": "Create src/lib/network.ts with: SpeedTestEngine class (XHR-based, parallel streams, progress callbacks), PerformanceMonitor class (PerformanceObserver wrapper), VPNDetector class (WebRTC + geolocation check), ConnectionMetrics class (pings speed.cloudflare.com, reads navigator.connection). Also: localStorage helpers for persisting test history. Types for all data structures.",
-      "complexity": "medium",
-      "model": "sonnet"
-    },
-    {
-      "id": 9,
-      "title": "21st.dev Components Integration",
-      "description": "Integrate the 3 design components: 1) NeonButton for all CTAs (Start Test, Clear History, etc.) — variants: default, cyan, green, red. 2) CpuArchitecture animation shown during active speed test (replace idle spinner with circuit animation). 3) Glass button style throughout. Also: add lib/utils.ts (cn helper), global CSS animations (neon glow, scan-line, circuit pulse). Add biome.json to exclude .next/.",
-      "complexity": "medium",
-      "model": "sonnet"
-    },
-    {
-      "id": 10,
-      "title": "Responsive + Final Polish",
-      "description": "Mobile responsive at 320px, 768px, 1440px. Sidebar collapses to bottom nav on mobile. Speed gauge scales properly. Toast notifications for: test complete, VPN detected, new record speed. Lighthouse >85. Zero console errors. biome check clean.",
-      "complexity": "low",
       "model": "sonnet"
     }
   ]
