@@ -363,11 +363,14 @@ export default function Page() {
       .catch(() => {});
   }, [sessionId]);
 
-  // ── Fetch ISP info via server-side API (with timezone mismatch detection) ──
-  useEffect(() => {
+  // ── Fetch ISP info — also refresh every 30s to detect VPN toggle ──
+  const fetchNetworkInfo = useCallback(() => {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const offset = -new Date().getTimezoneOffset(); // minutes from UTC (positive = east)
-    fetch(`/api/network/info?tz=${encodeURIComponent(tz)}&offset=${offset}`)
+    const offset = -new Date().getTimezoneOffset();
+    fetch(
+      `/api/network/info?tz=${encodeURIComponent(tz)}&offset=${offset}&t=${Date.now()}`,
+      { cache: "no-store" },
+    )
       .then((r) => r.json())
       .then((d: Record<string, string | boolean | number | null>) => {
         setIsp({
@@ -382,6 +385,13 @@ export default function Page() {
       })
       .catch(() => {});
   }, []);
+
+  // Re-fetch network info every 30s to detect VPN toggle
+  useEffect(() => {
+    fetchNetworkInfo();
+    const t = setInterval(fetchNetworkInfo, 30_000);
+    return () => clearInterval(t);
+  }, [fetchNetworkInfo]);
 
   // ── PerformanceObserver: network requests ──────────────────────────────────
   useEffect(() => {
